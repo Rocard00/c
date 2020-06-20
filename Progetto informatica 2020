@@ -1,0 +1,793 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+/*Come ipotesi aggiuntiva prevedo che le aree di parcheggio saranno sempre di codice consecutivo,come gli stalli.Questa supposizione Ã¨ valida dato che esiste un solo amministratore,ovvero me stesso
+e solo l'amministratore potrÃ  aggiungere parcheggi.*/
+typedef struct{
+	char nome[20];
+	char cognome [20];
+	int password;
+} amministratore;
+
+typedef struct{
+	char nome[20];
+	char cognome [20];
+	char nick[20];
+	int password;
+	int cont;
+} utente;
+
+typedef struct{
+	int numero;
+	int stato;                        //0 per libero,1 per occupato
+	int arrivo;                     //data arrivo
+	int partenza;                   //data partenza
+} stallo;
+
+struct nodo_stallo{
+	stallo data;
+	struct nodo_stallo* next;
+};
+
+typedef struct{
+	int codice;				//numero parcheggio
+	int stato;     	                                      //0 aperto al pubblico, 1 non aperto al pubblico
+	int sosta; 			           //0=breve,1=media,2=lunga
+	float prezzo;
+	int capienza;
+	struct nodo_stallo* stalli;
+} parcheggio;
+
+struct nodo_utente{
+	utente data;
+	struct nodo_utente *next;
+};
+struct nodo_parcheggio{
+	parcheggio data;
+	struct nodo_parcheggio *next;
+};
+
+struct nodo_utente *crea_utente (utente elem){
+	struct nodo_utente* head;
+	head=(struct nodo_utente*)malloc(sizeof(struct nodo_utente));
+	head->data=elem;
+	head->next=NULL;
+	return head;
+}
+
+struct nodo{
+	parcheggio data;
+	struct nodo *next;
+};
+struct nodo *top=NULL;
+
+struct nodo_stal{
+        stallo data;
+        struct nodo_stal *next;
+};
+struct nodo_stal *top_stal=NULL;
+
+struct nodo_stal* create_stal(stallo elem){
+        struct nodo_stal *top;
+        top=(struct nodo_stal*)malloc(sizeof(struct nodo_stal));
+        top->data=elem;
+        top->next=NULL;
+        return top;
+}
+int isEmpty_stal (struct nodo_stal *top){
+        return top==NULL ? 1:0;
+}
+
+struct nodo* create(parcheggio elem){
+	struct nodo *top;
+	top=(struct nodo*)malloc(sizeof(struct nodo));
+	top->data=elem;
+	top->next=NULL;
+	return top;
+}
+
+int isEmpty (struct nodo *top){
+        return top==NULL ? 1:0;
+}
+
+void push (struct nodo **top,parcheggio elem){
+	struct nodo *p;
+	p = (struct nodo *) malloc(sizeof(struct nodo));
+	if (p == NULL)
+		printf("memoria indisponibile");
+	else{
+		p->data = elem;
+		p->next = *top;
+		*top = p;
+	}
+}
+void push_stal (struct nodo_stal **top,stallo elem){
+        struct nodo_stal *p;
+        p = (struct nodo_stal *) malloc(sizeof(struct nodo_stal));
+        if (p == NULL)
+                printf("memoria indisponibile");
+        else{
+                p->data = elem;
+                p->next = *top;
+                *top = p;
+        }
+}
+
+stallo pop_stal (struct nodo_stal **top){
+        stallo a;
+        struct nodo_stal *p;
+        if (isEmpty_stal(*top))
+                printf("non ci sono elementi nella pila");
+        else{
+                a = (*top)->data;
+                p = *top;
+                *top = (*top)->next;
+                free (p);
+        }
+return a;
+}
+
+
+parcheggio pop (struct nodo **top){
+	parcheggio a;
+	struct nodo *p;
+	if (isEmpty(*top))
+		printf("non ci sono elementi nella pila");
+	else{
+		a = (*top)->data;
+		p = *top;
+		*top = (*top)->next;
+		free (p);
+	}
+return a;
+}
+
+
+struct nodo_parcheggio *crea_parcheggio (parcheggio elem){
+	struct nodo_parcheggio* head;
+	head=(struct nodo_parcheggio*)malloc(sizeof(struct nodo_parcheggio));
+	head->data=elem;
+	head->next=NULL;
+	return head;
+}
+
+struct nodo_stallo *crea_stallo (stallo elem){
+	struct nodo_stallo* head;
+	head=(struct nodo_stallo*)malloc(sizeof(struct nodo_stallo));
+	head->data=elem;
+	head->next=NULL;
+	return head;
+}
+void inserisciTestaUtente (struct nodo_utente **head, utente elem){
+	struct nodo_utente *p;
+	p= (struct nodo_utente *) malloc(sizeof(struct nodo_utente));
+	p->data = elem;
+	p->next = *head;
+	*head = p;
+}
+
+void inserisciTestaStallo (struct nodo_stallo **head, stallo elem){
+        struct nodo_stallo *p;
+        p= (struct nodo_stallo *) malloc(sizeof(struct nodo_stallo));
+        p->data = elem;
+        p->next = *head;
+        *head = p;
+}
+void inserisciTestaParcheggio (struct nodo_parcheggio **head, parcheggio elem){
+        struct nodo_parcheggio *p;
+        p= (struct nodo_parcheggio *) malloc(sizeof(struct nodo_parcheggio));
+        p->data = elem;
+        p->next = *head;
+        *head = p;
+}
+
+void inserisciCodaParcheggio (struct nodo_parcheggio **head, parcheggio elem){
+	struct nodo_parcheggio *temp;
+	struct nodo_parcheggio *p;
+	p = (struct nodo_parcheggio *) malloc(sizeof(struct nodo_parcheggio));
+	p->data = elem;
+	p->next = NULL;
+	if(*head==NULL){
+		*head=p;
+		return;
+	}
+	temp = *head;
+	while (temp->next != NULL)
+		temp = temp->next;
+	temp->next = p;
+	}
+
+void inserisciCodaStallo (struct nodo_stallo **head, stallo elem){
+        struct nodo_stallo *temp;
+        struct nodo_stallo *p;
+        p = (struct nodo_stallo *) malloc(sizeof(struct nodo_stallo));
+        p->data = elem;
+        p->next = NULL;
+        if(*head==NULL){
+                *head=p;
+                return;
+        }
+        temp = *head;
+        while (temp->next != NULL)
+                temp = temp->next;
+        temp->next = p;
+        }
+
+
+
+void carica_utente(struct nodo_utente **head){
+	FILE* f = NULL;
+	utente u;
+	f = fopen("utente.txt","r");
+	if(f==NULL)
+		printf("Errore nel caricamento del file\n");
+	fscanf(f,"%s %s %s %d %d\n",u.nick,u.nome,u.cognome,&u.password,&u.cont);
+	(*head)=crea_utente(u);
+	while(fscanf(f,"%s %s %s %d %d\n",u.nick,u.nome,u.cognome,&u.password,&u.cont)!=EOF)
+		inserisciTestaUtente(&*head,u);
+	fclose(f);
+}
+void carica_file(struct nodo_parcheggio **testa,struct nodo_stallo **head,struct nodo_parcheggio *pa){
+	int i=1,x=0;
+	FILE* f = NULL;
+        stallo s;
+	parcheggio p;
+        f = fopen("misto.txt","r");
+        if(f==NULL)
+                printf("Errore nel caricamento del file\n");
+	fscanf(f,"%d %d %d %f %d\n",&p.codice,&p.stato,&p.sosta,&p.prezzo,&p.capienza);
+        (*testa)=crea_parcheggio(p);
+        pa=*testa;
+	fscanf(f,"%d %d %d %d\n",&s.numero,&s.stato,&s.arrivo,&s.partenza);
+        (*head)=crea_stallo(s);
+	while(i<pa->data.capienza){
+                        fscanf(f,"%d %d %d %d\n",&s.numero,&s.stato,&s.arrivo,&s.partenza);
+                        inserisciTestaStallo(&*head,s);
+			i++;
+                }
+	i=0;
+	pa=pa->next;
+        while(fscanf(f,"%d %d %d %f %d\n",&p.codice,&p.stato,&p.sosta,&p.prezzo,&p.capienza)!=EOF){
+       		inserisciTestaParcheggio(&*testa,p);
+		pa=*testa;
+	       	while(i<pa->data.capienza){
+                        fscanf(f,"%d %d %d %d\n",&s.numero,&s.stato,&s.arrivo,&s.partenza);
+                        inserisciTestaStallo(&*head,s);
+			i++;
+                }
+                pa=pa -> next;
+                i=0;
+		x=1;
+	}
+        fclose(f);
+}
+
+void stampa_utente(struct nodo_utente *head){
+	if(head==NULL)
+		return;
+	else{
+		printf("%s %s %s %d %d \n",head->data.nick,head->data.nome,head->data.cognome,head->data.password,head->data.cont);
+		stampa_utente(head->next);
+	}
+}
+void stampa_parcheggio(struct nodo_parcheggio *head){
+        if(head==NULL)
+                return;
+        else{
+                printf("%d %d %d %f %d \n",head->data.codice,head->data.stato,head->data.sosta,head->data.prezzo,head->data.capienza);
+                stampa_parcheggio(head->next);
+        }
+}
+void stampa_stallo(struct nodo_stallo *head){
+        if(head==NULL)
+                return;
+        else{
+                printf("%d %d %d %d \n",head->data.numero,head->data.stato,head->data.arrivo,head->data.partenza);
+                stampa_stallo(head->next);
+        }
+}
+void cancella_utente(struct nodo_utente **head,struct nodo_utente *u){
+	struct nodo_utente  *r = *head;
+	if(u==*head)
+                *head=(*head)->next;
+	else
+		while(r->next!=u)
+			r=r->next;
+		r->next=u->next;
+		free(u);
+}
+void cancella_parcheggio(struct nodo_parcheggio **head,struct nodo_parcheggio *p){
+        struct nodo_parcheggio  *r = *head;
+        if(p==*head)
+                *head=(*head)->next;
+        else
+                while(r->next!=p)
+                        r=r->next;
+                r->next=p->next;
+                free(p);
+}
+void cancella_stallo(struct nodo_stallo **head,struct nodo_stallo *s){
+        struct nodo_stallo  *r = *head;
+        if(s==*head)
+                *head=(*head)->next;
+        else
+                while(r->next!=s)
+                        r=r->next;
+		if(s!=NULL)
+                	r->next=s->next;
+		else
+			r->next=NULL;
+                free(s);
+}
+
+void salva_utente(struct nodo_utente *head){
+	FILE* f = NULL;
+        f = fopen("utente.txt","w");
+        if(f==NULL)
+                printf("Errore nel caricamento del file\n");
+	while(head!=NULL){
+		fprintf(f,"%s %s %s %d %d \n",head->data.nick,head->data.nome,head->data.cognome,head->data.password,head->data.cont);
+		head=head->next;
+	}
+	fclose(f);
+}
+
+
+void salva_file(struct nodo_stallo *head,struct nodo_stal*stack_stallo,struct nodo_parcheggio *parch,struct nodo* stack_parcheggio){
+	parcheggio p;
+        stallo s;
+	int i=0;
+	p=parch->data;
+        stack_parcheggio=create(p);
+        parch=parch->next;
+        while(parch!=NULL){
+                p=parch->data;
+                push(&stack_parcheggio,p);
+                parch=parch->next;
+        }
+        s=head->data;
+        stack_stallo=create_stal(s);
+        head=head->next;
+        while(head!=NULL){
+        s=head->data;
+        push_stal(&stack_stallo,s);
+        head=head->next;
+        }
+        FILE* f = NULL;
+        f = fopen("misto.txt","w");
+        if(f==NULL)
+                printf("Errore nel caricamento del file\n");
+	while(stack_parcheggio!=NULL){
+                p=pop(&stack_parcheggio);
+                fprintf(f,"%d %d %d %f %d\n",p.codice,p.stato,p.sosta,p.prezzo,p.capienza);
+	        while(i<p.capienza){
+        	        s=pop_stal(&stack_stallo);
+        	        fprintf(f,"%d %d %d %d \n",s.numero,s.stato,s.arrivo,s.partenza);
+        		i++;
+		}
+		i=0;
+	}
+	fclose(f);
+
+}
+
+
+int accesso_utente(struct nodo_utente **head,struct nodo_utente **u,int log){
+	int b=0,controllo=1,j=3,password,risposta;
+	char nome[20],cognome[20],nick[20];
+        utente ut;
+	struct nodo_utente *uten;
+	uten=*head;
+        if(log==1){
+                printf("Inserisci: nome,cognome,nick e password:\n");
+                scanf("%s %s %s %d",ut.nome,ut.cognome,ut.nick,&ut.password);
+                ut.cont=0;
+                while(uten!=NULL){
+                   	if(controllo==1){
+                     		uten=*head;
+                                controllo=0;
+                        }
+                        if(strcmp(ut.nick,uten->data.nick)==0){
+                                printf("Nick giÃ  esistente!Inserire nuovo nick \n");
+                                scanf("%s",ut.nick);
+                                controllo=1;
+                        }
+                        else
+                                uten=uten->next;
+                }
+               printf("Registrazione andata a buon fine.\n");
+               inserisciTestaUtente(&*head,ut);
+	       uten=*head;
+	       log=0;
+        }
+         if(log!=1){
+		printf("inserisci nickname e password per il login.\n");
+                scanf("%s %d",nick,&password);
+                *u=uten;
+           	while(j!=0 && u!=NULL){
+                        if(strcmp(nick,(*u)->data.nick)==0 && password==(*u)->data.password){
+                             	risposta=1;
+				break;
+			}
+                        else
+                               *u=(*u)->next;
+			if(*u==NULL){
+                        	printf("Credenziali errate.Riprova!\n");
+                          	j--;
+                                printf("Hai ancora %d tentativi\n",j);
+				scanf("%s %d",nick,&password);
+				*u=*head;
+                        }
+                 }
+	}
+return risposta;
+}
+
+void ingresso(struct nodo_parcheggio *head_p,struct nodo_stallo *head_s,struct nodo_utente *u,int arrivo,int partenza,int cod){
+	int q=1,k=0,tot;
+	struct nodo_parcheggio *p;
+	struct nodo_stallo *s;
+	p=head_p;
+	s=head_s;
+	while(p!=NULL){
+          	if(cod!=p->data.codice){
+                   	while(q!=p->data.capienza){
+                             	s=s->next;
+                                q++;
+                        }
+                       	p=p->next;
+                        q=0;
+                 }
+                else{
+                 	if(s!=head_s)
+                         	s=s->next;
+                        p->data.stalli=s;
+                        tot=p->data.capienza;
+			if(p->data.stato==0)
+                        	while(k<tot){
+                        		k++;
+                        		if(p->data.stalli->data.stato==0){
+                         			p->data.stalli->data.stato=1;
+                                		p->data.stalli->data.arrivo=arrivo;
+                                		p->data.stalli->data.partenza=partenza;
+                                		u->data.cont++;
+                                		printf("La data di arrivo e':%d\n",p->data.stalli->data.arrivo);
+                                		printf("La data di partenza e':%d\n",p->data.stalli->data.partenza);
+                                		printf("Hai parcheggiato nello stallo n.%d\n",p->data.stalli->data.numero);
+                                		break;
+                         		}
+                        		else
+                        			p->data.stalli=p->data.stalli->next;
+                		}break;
+			}
+         	}
+         	if(p==NULL){
+                       	printf("Parcheggio inserito inesistente!Riprova.");
+                        scanf("%d",&cod);
+                        p=head_p;
+                        s=head_s;
+         	}
+		if(p->data.stato==1)
+                        printf("Operazione fallita,parcheggio in manutenzione!\n");
+}
+
+void trova_parch(struct nodo_parcheggio **parch,struct nodo_parcheggio *head_p,int chiave){
+        while(*parch!=NULL){
+                if(chiave!=(*parch)->data.codice)
+                        *parch=(*parch)->next;
+                else
+                        break;
+                if(*parch==NULL){
+                        printf("Parcheggio inserito non esistente,riprova\n");
+                        scanf("%d",&chiave);
+                        *parch=head_p;
+                }
+        }
+}
+
+void modifica_parch(struct nodo_parcheggio *head,int scelta){
+	struct nodo_parcheggio *parch;
+	parcheggio p;
+        int controllo=1,sosta;
+        float prezzo;
+	parch=head;
+	trova_parch(&parch,head,scelta);
+        while(scelta!=0){
+          	printf("Scegli:1 per modificare la sosta,2 per modificare il prezzo,0 per uscire.\n");
+                scanf("%d",&scelta);
+                switch(scelta){
+                	case 0:
+                 		printf("Arrivederci\n");
+                        	break;
+                	case 1:{
+                        	printf("breve=0/media=1/lunga=2,");
+                        	printf("inserisci la nuova sosta ");
+                        	scanf("%d",&sosta);
+                        	parch->data.sosta=sosta;
+                	}       break;
+                	case 2:{
+                        	printf("Inserisci il nuovo prezzo:\n");
+                        	scanf("%f",&prezzo);
+                        	parch->data.prezzo=prezzo;
+                	}       break;
+                	default:printf("scelta errata \n ");
+          	}
+	}
+}
+void uscita(struct nodo_parcheggio *head_p,struct nodo_stallo *head_s,int area,int stall){
+	struct nodo_parcheggio *p;
+	struct nodo_stallo *s;
+	p=head_p;
+        s=head_s;
+	int q=1;
+	while(area!=p->data.codice){
+         	while(q!=p->data.capienza){
+                   	s=s->next;
+                        q++;
+                }
+               	p=p->next;
+                q=0;
+        }
+        s=s->next;
+        p->data.stalli=s;
+        while(stall!=p->data.stalli->data.numero)
+          	p->data.stalli=p->data.stalli->next;
+        p->data.stalli->data.stato=0;
+        p->data.stalli->data.arrivo=0;
+        p->data.stalli->data.partenza=0;
+        printf("Ha pagato:%f,arrivederci e buon viaggio!\n",p->data.prezzo);
+}
+void inserimento_parch(struct nodo_parcheggio **head_p,struct nodo_stallo **head_s){
+	parcheggio p;
+	stallo s;
+	s.numero=0;
+        struct nodo_parcheggio *parch=*head_p;
+        int controllo=1,i=0;
+        printf("Inserisci codice parcheggio.\n");
+        scanf("%d",&p.codice);
+        while(parch!=NULL){
+          	if(controllo==1){
+                  	parch=*head_p;
+                        controllo=0;
+                 }
+             	if(p.codice==parch->data.codice){
+                        printf("codice giÃ  esistente! \n");
+                        printf("Inserire nuovo codice \n");
+                        scanf("%d",&p.codice);
+                        controllo=1;
+                }
+                else
+                        parch=parch->next;
+        }
+      	printf("Inserisci lo stato del parcheggio.\n");
+        scanf("%d",&p.stato);
+        printf("Inserisci il tipo di sosta.\n");
+        scanf("%d",&p.sosta);
+        printf("Inserisci il prezzo.\n");
+        scanf("%f",&p.prezzo);
+        printf("Inserisci la capienza.\n");
+        scanf("%d",&p.capienza);
+        inserisciCodaParcheggio(*&head_p,p);
+	while(i<p.capienza){
+		s.numero++;
+		s.stato=0;
+		s.arrivo=0;
+		s.partenza=0;
+		inserisciCodaStallo(*&head_s,s);
+		i++;
+	}
+}
+void disponibilita(struct nodo_stallo *s,int giorno){
+	int libero=0;
+        while(s!=NULL){
+             	if(s->data.arrivo==0 || (giorno > s->data.partenza || giorno < s->data.arrivo) )
+                    	libero++;
+                s=s->next;
+       	}
+        printf("Gli stalli liberi nel giorno richiesto sono:%d\n",libero);
+}
+
+void modifica_stato(struct nodo_parcheggio *head_p,int chiave){
+	struct nodo_parcheggio *parch;
+	parch=head_p;
+	trova_parch(&parch,head_p,chiave);
+        if(parch->data.stato==0)
+         	parch->data.stato=1;
+        else
+                parch->data.stato=0;
+        printf("Stato modificato\n");
+}
+
+void storico(struct nodo_utente *u,struct nodo_utente *head,char nome[]){
+       	while(u!=NULL){
+           	if(strcmp(nome,u->data.nick)==0){
+                     	printf("Il suo storico e':%d\n",u->data.cont);
+                          	break;
+                }
+                else
+                	u=u->next;
+                if(u==NULL){
+                  	printf("Nick inesistente.Riprova\n");
+                        scanf("%s",nome);
+                        u=head;
+                }
+        }
+}
+
+void menu(struct nodo_utente **head,struct nodo_stallo **head_s,struct nodo_parcheggio **head_p,int log){
+	char nome[20],cognome[20],nick[20],risposta;
+	int password,a=1,j=3,chiave;
+	struct nodo_utente *u;
+	struct nodo_stallo *s;
+	struct nodo_parcheggio *p;
+	struct nodo_utente *uten;
+	if(log==1){
+		printf("Premi 1 per effettuare la registrazione oppure premi un altro intero per effettuare il login. \n");
+        	scanf("%d",&chiave);
+		risposta=accesso_utente(&*head,&u,chiave);
+		if(risposta!=1) return;
+                while(log!=0){
+                        printf("Digita 1 per effettuare il logout. \n");
+                        printf("Digita 2 per effettuare la cancellazione dalla lista.\n");
+                        printf("Digita 3 per effettuare la ricerca di un parcheggio libero in una certa data. \n");
+                        printf("Digita 4 per effettuare l'operazione di ingresso del parcheggio. \n");
+                        printf("Digita 5 per effettuare l'operazione di abbandono del parcheggio. \n");
+                        scanf("%d",&log);
+                        switch(log){
+                                case 1:{
+					u=*head;
+					a=1;
+					printf("logout effettuato. \n");
+					log=0;
+				  }
+					break;
+                                case 2:{
+                                        printf("Cancellazione effettuata. \n");
+					cancella_utente(&*head,u);
+					log=0;
+                                        }
+					break;
+                                case 3:{
+					int giorno,libero=0;
+					s=*head_s;
+					printf("In che data vuoi vedere la disponibilita' dei parcheggi?(annomesegiorno)\n");
+					scanf("%d",&giorno);
+					disponibilita(s,giorno);
+                                        }
+					break;
+                                case 4:{
+					int cod,tot,k=0,arrivo,partenza,q=1;
+              				printf("Inserisci la data di arrivo(annomesegiorno).\n");
+					scanf("%d",&arrivo);
+					printf("Inseresci data partenza(annomesegiorno).\n");
+					scanf("%d",&partenza);
+					printf("In quale area vuoi parcheggiare?\n");
+					scanf("%d",&cod);
+					ingresso(*head_p,*head_s,u,arrivo,partenza,cod);
+                         }
+					break;
+				case 5:{
+					int area,stall;
+					printf("In che area aveva parcheggiato?\n");
+					scanf("%d",&area);
+					printf("In quale stallo aveva parcheggiato?\n");
+					scanf("%d",&stall);
+					uscita(*head_p,*head_s,area,stall);
+				}
+					break;
+                                default:printf("scelta errata \n");
+               		 }
+		}
+	}
+        if(log==2){
+		int pass,i=3,chiave;
+		struct nodo_parcheggio *parch=*head_p;
+		char nome[20];
+                printf("Hai selezionato l'accesso come amministratore,inserisci la password \n");
+		scanf("%d",&pass);
+		while(i!=0)
+			if(pass!=0000){					//password che conosce solo l'amministratore
+				i--;
+				printf("password errata.");
+				printf("Hai ancora %d tentativi:\n",i);
+				printf("Inserisci nuova password\n");
+				scanf("%d",&pass);
+			}
+			else break;
+		if(i==0) return;
+                while(log!=0){
+			printf("Digita 1 per effettuare l'inserimento di un parcheggio. \n");
+                        printf("Digita 2 per effettuare la modifica di un parcheggio\n");
+			printf("Digita 3 per modificare lo stato di un parcheggio\n");
+                        printf("Digita 4 per visualizzare lo stato di un parcheggio specifico\n");
+			printf("Digita 5 per effettuare la cancellazione di un parcheggio. \n");
+                        printf("Digita 6 per visualizzare lo storico di un particolare utente\n");
+                        printf("Digita 0 per uscire \n");
+                        scanf("%d",&log);
+                        switch(log){
+                                case 0: printf("Arrivederci. \n");
+					break;
+                                case 1:{
+					inserimento_parch(&*head_p,&*head_s);
+				 }
+					break;
+                                case 5:{
+					int q=1,area;
+					p=*head_p;
+                                        s=*head_s;
+					printf("Che parcheggio vuoi eliminare?\n");
+					scanf("%d",&area);
+					while(area!=p->data.codice){
+                                                while(q!=p->data.capienza){
+                                                        s=s->next;
+                                                        q++;
+                                                 }
+                                                p=p->next;
+                                                q=0;
+                                        }
+                                        p->data.stalli=s;
+					while(p->data.capienza!=0){
+						p->data.capienza--;
+						cancella_stallo(&*head_s,p->data.stalli->next);
+					}
+					cancella_parcheggio(&*head_p,p);
+                                        printf("parcheggio cancellato.\n");
+					}
+					break;
+                                case 2:{
+					int scelta;
+					printf("Quale parcheggio vuoi modificare?\n");
+					scanf("%d",&scelta);
+					modifica_parch(*head_p,scelta);
+				}
+						break;
+				case 3:{
+					printf("inserisci il parcheggio del quale modificare lo stato\n");
+					scanf("%d",&chiave);
+					modifica_stato(*head_p,chiave);
+				}	break;
+                                case 4:{
+					parch=*head_p;
+					printf("inserisci il parcheggio di cui ti interessa visualizzare lo stato\n");
+                                        scanf("%d",&chiave);
+					trova_parch(&parch,*head_p,chiave);
+					printf("Lo stato del parcheggio n.%d e':%d\n",parch->data.codice,parch->data.stato);
+                                        }
+					break;
+                                case 6:{
+					u=*head;
+					printf("Di quale utente vuoi visualizzare lo storico?\n");
+					printf("Inserisci il nickname\n");
+					scanf("%s",nome);
+					storico(u,*head,nome);
+                                }
+					break;
+                                default:printf("scelta errata \n ");
+                        }
+                }
+        }
+
+
+}
+
+
+
+int main(){
+	int scelta;
+	utente u;
+	stallo s;
+	parcheggio p;
+	struct nodo_utente* utente = NULL;
+	carica_utente(&utente);
+	struct nodo_parcheggio* parcheggio = NULL;
+	struct nodo_stallo* stallo = NULL;
+	carica_file(&parcheggio,&stallo,parcheggio);
+	printf("Vuoi accedere al menu' relativo all'amministratore o all'utente? \n");
+	printf("Inserisci 1 per accedere come utente oppure inserisci 2 per accedere come amministratore. \n");
+	scanf("%d",&scelta);
+	menu(&utente,&stallo,&parcheggio,scelta);
+	struct nodo* stack=NULL;
+	struct nodo_stal* testa=NULL;
+	salva_file(stallo,testa,parcheggio,stack);
+	salva_utente(utente);
+}
